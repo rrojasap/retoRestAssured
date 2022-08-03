@@ -11,10 +11,36 @@ public class TasksTest extends TestBase {
 
     /*Verificar el comportamiento de creación de tareas cuando no se envía el dato requerido “description”*/
     @Test
-    public void registrar_tarea_deberia_devolver_400_y_mensaje_error_si_no_se_envia_description(){
+    public void registrar_tarea_deberia_devolver_400_y_mensaje_error_si_se_envia_description_null(){
         Task testTask = createNewEmptyTask();
 
         Response taskRegisterResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).body(testTask).post("/task");
+        taskRegisterResponse.then()
+                .assertThat()
+                .statusCode(400)
+        ;
+
+        String message = taskRegisterResponse.then().extract().asString();
+
+        assertThat(message, containsString("Path `description` is required"));
+    }
+    @Test
+    public void registrar_tarea_deberia_devolver_400_y_mensaje_error_si_se_envia_description_vacio(){
+        Task testTask = createNewTaskWithoutDescription();
+
+        Response taskRegisterResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).body(testTask).post("/task");
+        taskRegisterResponse.then()
+                .assertThat()
+                .statusCode(400)
+        ;
+
+        String message = taskRegisterResponse.then().extract().asString();
+
+        assertThat(message, containsString("Path `description` is required"));
+    }
+    @Test
+    public void registrar_tarea_deberia_devolver_400_y_mensaje_error_si_no_se_envia_nada(){
+        Response taskRegisterResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).post("/task");
         taskRegisterResponse.then()
                 .assertThat()
                 .statusCode(400)
