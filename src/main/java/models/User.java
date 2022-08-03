@@ -8,7 +8,7 @@ public class User {
     public Integer age;
 
     public User(){
-        //void constructor
+        //empty constructor
     }
 
     public User(String name, String email, String password, Integer age) {
