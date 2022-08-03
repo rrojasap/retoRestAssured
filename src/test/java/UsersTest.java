@@ -3,9 +3,8 @@ import org.junit.jupiter.api.Test;
 import models.User;
 import models.UserAccount;
 
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 
 public class UsersTest extends TestBase {
@@ -35,7 +34,7 @@ public class UsersTest extends TestBase {
     }
 
     /*Verificar el comportamiento del servicio de creación de usuarios cuando se registra un correo nuevo*/
-
+/*emptycode here*/
     /*Verificar el comportamiento del servicio de Login cuando se envía un correo electrónico vacío*/
     @Test
     public void login_deberia_retornar_400_y_mensaje_error_al_enviar_correo_vacio() {
@@ -72,17 +71,48 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userRegisterRensponse = REQUEST.body(testLogin).post("/user/login");
-        userRegisterRensponse.then()
+        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+        userLoginRensponse.then()
                 .assertThat()
-                .statusCode(200);
-        userRegisterRensponse.then()
-                .body(matchesJsonSchemaInClasspath("loginResponse.json"));
-        userRegisterRensponse.then()
+                .statusCode(200)
+                .and()
+                .body(matchesJsonSchemaInClasspath("loginResponse.json"))
+                .and()
                 .body("user.age", equalTo(testUser.age))
                 .body("user.name", equalTo(testUser.name))
                 .body("user.email", equalTo(testUser.email))
         ;
+    }
+
+    /*Verificar el comportamiento del servicio de Login usando las credenciales del nuevo usuario creado*/
+    @Test
+    public void logout_deberia_retornar_200_y_response_success() {
+
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginRensponse.body().jsonPath().getString("token");
+        Response userLogoutResponse = REQUEST.header("Authorization", "Bearer "+token).post("/user/logout");
+        userLogoutResponse.then().assertThat().statusCode(200).and().body("success", equalTo(true));
+    }
+
+    /*Verificar el comportamiento del servicio de logout utilizando el Bearer token obtenido del login luego de haberse ejecutado el servicio logout previamente*/
+    @Test
+    public void segundo_logout_seguido_deberia_retornar_401_y_response_error() {
+
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginRensponse.body().jsonPath().getString("token");
+        REQUEST.header("Authorization", "Bearer "+token).post("/user/logout");
+        Response userLogoutResponse = REQUEST.header("Authorization", "Bearer "+token).post("/user/logout");
+        userLogoutResponse.then().assertThat().statusCode(401).and().body("error", notNullValue()).and().body("error", not(equalTo("")));
     }
 
     private User createNewUser() {
