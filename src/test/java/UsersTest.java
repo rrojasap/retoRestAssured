@@ -1,10 +1,6 @@
 import io.restassured.response.Response;
+import models.*;
 import org.junit.jupiter.api.Test;
-import models.User;
-import models.UserAccount;
-import models.AgeUpdater;
-import models.NameUpdater;
-import models.EmailUpdater;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -17,9 +13,9 @@ public class UsersTest extends TestBase {
     public void creacion_usuarios_deberia_retornar_400_y_mensaje_error_al_registrar_correo_existente() {
         User testUser = createNewUser();
         REQUEST.body(testUser).post("/user/register");
-        Response userRegisterRensponse = REQUEST.body(testUser).post("/user/register");
-        userRegisterRensponse.then().assertThat().statusCode(400);
-        String message = userRegisterRensponse.then().extract().asString();
+        Response userRegisterResponse = REQUEST.body(testUser).post("/user/register");
+        userRegisterResponse.then().assertThat().statusCode(400);
+        String message = userRegisterResponse.then().extract().asString();
 
         assertThat(message, containsString("duplicate key error collection"));
     }
@@ -28,16 +24,30 @@ public class UsersTest extends TestBase {
     @Test
     public void creacion_usuarios_deberia_retornar_400_y_mensaje_error_al_registrar_correo_sin_formato() {
         User testUser = createNewUserWrongEmail();
-        REQUEST.body(testUser).post("/user/register");
-        Response userRegisterRensponse = REQUEST.body(testUser).post("/user/register");
-        userRegisterRensponse.then().assertThat().statusCode(400);
-        String message = userRegisterRensponse.then().extract().asString();
+        Response userRegisterResponse = REQUEST.body(testUser).post("/user/register");
+        userRegisterResponse.then().assertThat().statusCode(400);
+        String message = userRegisterResponse.then().extract().asString();
 
         assertThat(message, containsString("Email is invalid"));
     }
 
     /*Verificar el comportamiento del servicio de creación de usuarios cuando se registra un correo nuevo*/
-    /*emptycode here*/
+    @Test
+    public void creacion_usuarios_deberia_retornar_201_y_los_datos_deberian_ser_los_registrados_para_el_usuario_en_un_registro_correcto(){
+        User testUser = createNewUser();
+        Response userRegisterResponse = REQUEST.body(testUser).post("/user/register");
+        userRegisterResponse.then()
+                .assertThat()
+                .statusCode(201)
+                .and()
+                .body(matchesJsonSchemaInClasspath("loginResponse.json"))
+                .and()
+                .body("user.name", equalTo(testUser.name))
+                .body("user.email", equalTo(testUser.email))
+                .body("user.age", equalTo(testUser.age))
+        ;
+    }
+
     /*Verificar el comportamiento del servicio de Login cuando se envía un correo electrónico vacío*/
     @Test
     public void login_deberia_retornar_400_y_mensaje_error_al_enviar_correo_vacio() {
@@ -45,9 +55,9 @@ public class UsersTest extends TestBase {
         UserAccount testUser = new UserAccount();
         testUser.password = FAKER.internet().password();
 
-        Response userRegisterRensponse = REQUEST.body(testUser).post("/user/login");
-        userRegisterRensponse.then().assertThat().statusCode(400);
-        String message = userRegisterRensponse.then().extract().asString();
+        Response userRegisterResponse = REQUEST.body(testUser).post("/user/login");
+        userRegisterResponse.then().assertThat().statusCode(400);
+        String message = userRegisterResponse.then().extract().asString();
 
         assertThat(message, containsString("Unable to login"));
     }
@@ -59,9 +69,9 @@ public class UsersTest extends TestBase {
         UserAccount testUser = new UserAccount();
         testUser.email = FAKER.internet().emailAddress();
 
-        Response userRegisterRensponse = REQUEST.body(testUser).post("/user/login");
-        userRegisterRensponse.then().assertThat().statusCode(400);
-        String message = userRegisterRensponse.then().extract().asString();
+        Response userRegisterResponse = REQUEST.body(testUser).post("/user/login");
+        userRegisterResponse.then().assertThat().statusCode(400);
+        String message = userRegisterResponse.then().extract().asString();
 
         assertThat(message, containsString("Unable to login"));
     }
@@ -74,8 +84,8 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
-        userLoginRensponse.then()
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
+        userLoginResponse.then()
                 .assertThat()
                 .statusCode(200)
                 .and()
@@ -95,9 +105,9 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
 
-        String token = userLoginRensponse.body().jsonPath().getString("token");
+        String token = userLoginResponse.body().jsonPath().getString("token");
         Response userLogoutResponse = REQUEST.header("Authorization", "Bearer " + token).post("/user/logout");
         userLogoutResponse.then().assertThat().statusCode(200).and().body("success", equalTo(true));
     }
@@ -110,9 +120,9 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
 
-        String token = userLoginRensponse.body().jsonPath().getString("token");
+        String token = userLoginResponse.body().jsonPath().getString("token");
         REQUEST.header("Authorization", "Bearer " + token).post("/user/logout");
         Response userLogoutResponse = REQUEST.header("Authorization", "Bearer " + token).post("/user/logout");
         userLogoutResponse.then().assertThat().statusCode(401).and().body("error", notNullValue()).and().body("error", not(equalTo("")));
@@ -128,9 +138,9 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
 
-        String token = userLoginRensponse.body().jsonPath().getString("token");
+        String token = userLoginResponse.body().jsonPath().getString("token");
         NameUpdater reqBody = new NameUpdater(FAKER.name().fullName());
         Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
 
@@ -148,9 +158,9 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
 
-        String token = userLoginRensponse.body().jsonPath().getString("token");
+        String token = userLoginResponse.body().jsonPath().getString("token");
         AgeUpdater reqBody = new AgeUpdater(FAKER.number().numberBetween(0,99));
         Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
 
@@ -168,9 +178,9 @@ public class UsersTest extends TestBase {
         REQUEST.body(testUser).post("/user/register");
 
         UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
-        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
 
-        String token = userLoginRensponse.body().jsonPath().getString("token");
+        String token = userLoginResponse.body().jsonPath().getString("token");
         EmailUpdater reqBody = new EmailUpdater(FAKER.internet().emailAddress());
         Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
 
@@ -182,11 +192,38 @@ public class UsersTest extends TestBase {
         ;
     }
 
+    /*Verificar el comportamiento de actualización de datos del usuario cuando se actualiza múltiples datos del perfil del usuario como el nombre, la edad o el correo electrónico.*/
+    @Test
+    public void update_user_deberia_retornar_200_y_modificar_todos_los_datos(){
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginResponse.body().jsonPath().getString("token");
+        UserUpdater reqBody = createUserUpdater();
+        Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
+
+        updateResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("data.email", equalTo(reqBody.email))
+                .body("data.name", equalTo(reqBody.name))
+                .body("data.age", equalTo(reqBody.age))
+        ;
+    }
+
     private User createNewUser() {
         return new User(FAKER.name().fullName(), FAKER.internet().emailAddress(), FAKER.internet().password(), FAKER.number().numberBetween(0, 99));
     }
 
     private User createNewUserWrongEmail() {
         return new User(FAKER.name().fullName(), FAKER.internet().avatar(), FAKER.internet().password(), FAKER.number().numberBetween(0, 99));
+    }
+
+    private UserUpdater createUserUpdater(){
+        return new UserUpdater(FAKER.name().fullName(),FAKER.internet().emailAddress(),FAKER.number().numberBetween(0,99));
     }
 }
