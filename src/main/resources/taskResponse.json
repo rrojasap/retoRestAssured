@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "count": {
+      "type": "integer"
+    },
+    "data": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "completed": {
+              "type": "boolean"
+            },
+            "_id": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            },
+            "createdAt": {
+              "type": "string"
+            },
+            "updatedAt": {
+              "type": "string"
+            },
+            "__v": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "completed",
+            "_id",
+            "description",
+            "owner",
+            "createdAt",
+            "updatedAt",
+            "__v"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "count",
+    "data"
+  ]
+}
