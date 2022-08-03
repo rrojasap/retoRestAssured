@@ -2,6 +2,9 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 import models.User;
 import models.UserAccount;
+import models.AgeUpdater;
+import models.NameUpdater;
+import models.EmailUpdater;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,7 +37,7 @@ public class UsersTest extends TestBase {
     }
 
     /*Verificar el comportamiento del servicio de creación de usuarios cuando se registra un correo nuevo*/
-/*emptycode here*/
+    /*emptycode here*/
     /*Verificar el comportamiento del servicio de Login cuando se envía un correo electrónico vacío*/
     @Test
     public void login_deberia_retornar_400_y_mensaje_error_al_enviar_correo_vacio() {
@@ -95,7 +98,7 @@ public class UsersTest extends TestBase {
         Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
 
         String token = userLoginRensponse.body().jsonPath().getString("token");
-        Response userLogoutResponse = REQUEST.header("Authorization", "Bearer "+token).post("/user/logout");
+        Response userLogoutResponse = REQUEST.header("Authorization", "Bearer " + token).post("/user/logout");
         userLogoutResponse.then().assertThat().statusCode(200).and().body("success", equalTo(true));
     }
 
@@ -110,8 +113,8 @@ public class UsersTest extends TestBase {
         Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
 
         String token = userLoginRensponse.body().jsonPath().getString("token");
-        REQUEST.header("Authorization", "Bearer "+token).post("/user/logout");
-        Response userLogoutResponse = REQUEST.header("Authorization", "Bearer "+token).post("/user/logout");
+        REQUEST.header("Authorization", "Bearer " + token).post("/user/logout");
+        Response userLogoutResponse = REQUEST.header("Authorization", "Bearer " + token).post("/user/logout");
         userLogoutResponse.then().assertThat().statusCode(401).and().body("error", notNullValue()).and().body("error", not(equalTo("")));
     }
 
@@ -120,18 +123,63 @@ public class UsersTest extends TestBase {
 
     /*Verificar el comportamiento de actualización de datos del usuario cuando se actualiza un único dato del perfil del usuario como el nombre, la edad o el correo electrónico*/
     @Test
-    public void update_user_deberia_retornar_200_y_modificar_el_dato_nombre(){
+    public void update_user_deberia_retornar_200_y_modificar_el_dato_nombre() {
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
 
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
 
+        String token = userLoginRensponse.body().jsonPath().getString("token");
+        NameUpdater reqBody = new NameUpdater(FAKER.name().fullName());
+        Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
 
+        updateResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("data.name", equalTo(reqBody.name))
+        ;
     }
-    @Test
-    public void update_user_deberia_retornar_200_y_modificar_el_dato_edad(){
 
+    @Test
+    public void update_user_deberia_retornar_200_y_modificar_el_dato_edad() {
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginRensponse.body().jsonPath().getString("token");
+        AgeUpdater reqBody = new AgeUpdater(FAKER.number().numberBetween(0,99));
+        Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
+
+        updateResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("data.age", equalTo(reqBody.age))
+        ;
     }
-    @Test
-    public void update_user_deberia_retornar_200_y_modificar_el_dato_correo(){
 
+    @Test
+    public void update_user_deberia_retornar_200_y_modificar_el_dato_correo() {
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginRensponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginRensponse.body().jsonPath().getString("token");
+        EmailUpdater reqBody = new EmailUpdater(FAKER.internet().emailAddress());
+        Response updateResponse = REQUEST.header("Authorization", "Bearer " + token).body(reqBody).put("/user/me");
+
+        updateResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("data.email", equalTo(reqBody.email))
+        ;
     }
 
     private User createNewUser() {
@@ -141,6 +189,4 @@ public class UsersTest extends TestBase {
     private User createNewUserWrongEmail() {
         return new User(FAKER.name().fullName(), FAKER.internet().avatar(), FAKER.internet().password(), FAKER.number().numberBetween(0, 99));
     }
-
-
 }
