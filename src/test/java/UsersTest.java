@@ -115,6 +115,25 @@ public class UsersTest extends TestBase {
         userLogoutResponse.then().assertThat().statusCode(401).and().body("error", notNullValue()).and().body("error", not(equalTo("")));
     }
 
+    /*Verificar el comportamiento del servicio para obtener los datos del usuario luego de que se haya creado.*/
+    /*DUDA DEL SERIVICIO A EVALUAR*/
+
+    /*Verificar el comportamiento de actualización de datos del usuario cuando se actualiza un único dato del perfil del usuario como el nombre, la edad o el correo electrónico*/
+    @Test
+    public void update_user_deberia_retornar_200_y_modificar_el_dato_nombre(){
+
+
+
+    }
+    @Test
+    public void update_user_deberia_retornar_200_y_modificar_el_dato_edad(){
+
+    }
+    @Test
+    public void update_user_deberia_retornar_200_y_modificar_el_dato_correo(){
+
+    }
+
     private User createNewUser() {
         return new User(FAKER.name().fullName(), FAKER.internet().emailAddress(), FAKER.internet().password(), FAKER.number().numberBetween(0, 99));
     }
