@@ -1,5 +1,6 @@
 import io.restassured.response.Response;
 import models.*;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.*;
@@ -83,6 +84,55 @@ public class TasksTest extends TestBase {
         ;
     }
 
+    /*Verificar el comportamiento del servicio de actualización de tareas cuando se envía el valor true para “completed”*/
+    @Test
+    public void update_tarea_deberia_devolver_200_valor_completed_true_cuando_se_envia_completed_true() {
+        Task testTask = createNewTask();
+        Response taskRegisterResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).body(testTask).post("/task");
+
+        String testId = taskRegisterResponse.body().jsonPath().getString("data._id");
+        TaskCompleter testCompleter = createNewTaskCompleter();
+        Response taskUpdateResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).body(testCompleter).put("/task/"+testId);
+
+        taskUpdateResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("data.completed", equalTo(true));
+    }
+
+    /*Verificar el comportamiento del servicio de listado de tareas con paginación enviando siempre un valor para el queryParam “skip” 0 y un número límite*/
+    @Test
+    public void get_tareas_paginadas_skip_0_deberia_devolver_200_items_listados_igual_a_count_y_count_menor_a_limit() {
+        Integer testLimit = Math.toIntExact(FAKER.number().randomNumber());
+        Response taskListResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).get("/task?limit="+testLimit+"&skip=0");
+        Integer listSize = taskListResponse.body().jsonPath().getList("data").size();
+
+        taskListResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("count", equalTo(listSize))
+                .and()
+                .body("count", Matchers.lessThanOrEqualTo(testLimit));
+    }
+
+    /*Verificar el comportamiento del servicio de eliminación cuando se provee un id existente*/
+    @Test
+    public void delete_task_deberia_devolver_200_valor_success_true(){
+        Task testTask = createNewTask();
+        Response taskRegisterResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).body(testTask).post("/task");
+
+        String testId = taskRegisterResponse.body().jsonPath().getString("data._id");
+        Response taskDeleteResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).delete("/task/"+testId);
+
+        taskDeleteResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("success", equalTo(true));
+
+    }
 
     private Task createNewEmptyTask() {
         return new Task();
@@ -94,6 +144,10 @@ public class TasksTest extends TestBase {
 
     private Task createNewTask() {
         return new Task(FAKER.backToTheFuture().quote());
+    }
+
+    private TaskCompleter createNewTaskCompleter(){
+        return new TaskCompleter(true);
     }
 
 
