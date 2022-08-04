@@ -131,8 +131,32 @@ public class TasksTest extends TestBase {
                 .statusCode(200)
                 .and()
                 .body("success", equalTo(true));
-
     }
+
+    /*Verificar el comportamiento del servicio de eliminación de tareas cuando se provee un id que no existe.
+       * El Sistema deberia devolver un codigo 400 de bad request
+       * El Sistema deberia devolver un mensaje de error
+    */
+    @Test
+    public void delete_task_deberia_devolver_400_mensaje_error_con_id_inexistente(){
+        String testId = FAKER.backToTheFuture().quote();
+
+        Response taskDeleteResponse = REQUEST.header("Authorization", "Bearer " + TOKEN).delete("/task/"+testId);
+
+        taskDeleteResponse.then()
+                .assertThat()
+                .statusCode(400);
+
+        String errorMessage = taskDeleteResponse.then().extract().asString();
+        assertThat(errorMessage, not(equalTo("")));
+        assertThat(errorMessage, notNullValue());
+    }
+
+    @Test
+    public void aaa(){
+        System.out.println(FAKER.internet().avatar());
+    }
+
 
     private Task createNewEmptyTask() {
         return new Task();

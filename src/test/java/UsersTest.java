@@ -215,6 +215,54 @@ public class UsersTest extends TestBase {
         ;
     }
 
+    /*Verificar el comportamiento del servicio de eliminación de usuario cuando se provee un id que no existe.
+     * El Sistema deberia devolver un codigo 200
+     * El Sistema deberia devolver “success”: true
+     */
+    @Test
+    public void delete_user_deberia_retornar_200_y_success_true(){
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginResponse.body().jsonPath().getString("token");
+        Response deleteResponse = REQUEST.header("Authorization", "Bearer " + token).delete("/user/me");
+
+        deleteResponse.then()
+                .assertThat()
+                .statusCode(200)
+                .and()
+                .body("success", equalTo(true))
+        ;
+    }
+
+    /*Verificar el comportamiento del servicio de update avatar del usuario cuando no se le envia un "avatar".
+     * El Sistema deberia devolver un codigo 400
+     * El Sistema deberia devolver un mensaje de error
+     */
+    @Test
+    public void update_avatar_deberia_devolver_400_mensaje_error_cuando_no_envia_avatar(){
+        User testUser = createNewUser();
+        REQUEST.body(testUser).post("/user/register");
+
+        UserAccount testLogin = new UserAccount(testUser.email, testUser.password);
+        Response userLoginResponse = REQUEST.body(testLogin).post("/user/login");
+
+        String token = userLoginResponse.body().jsonPath().getString("token");
+        Response updateAvatarResponse = REQUEST.header("Authorization", "Bearer " + token).post("/user/me/avatar");
+
+        updateAvatarResponse.then()
+                .assertThat()
+                .statusCode(400)
+        ;
+
+        String errorMessage = updateAvatarResponse.then().extract().asString();
+        assertThat(errorMessage, not(equalTo("")));
+        assertThat(errorMessage, notNullValue());
+    }
+
     private User createNewUser() {
         return new User(FAKER.name().fullName(), FAKER.internet().emailAddress(), FAKER.internet().password(), FAKER.number().numberBetween(0, 99));
     }
